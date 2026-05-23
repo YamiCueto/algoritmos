@@ -1,12 +1,12 @@
-import { loadPartials }                        from './loader.js';
-import { SVG, CODE_LINES_BY_LANG, buildSteps } from './algorithms/par-impar.js';
-import { createHighlighter }                   from 'https://esm.sh/shiki@1';
+import { loadPartials }      from './loader.js';
+import { createHighlighter } from 'https://esm.sh/shiki@1';
 
 // ── Estado ─────────────────────────────────────────────────────────────
 let stepIndex    = 0;
 let steps        = [];
 let autoTimer    = null;
 let currentLang  = 'js';
+let currentAlgo  = null;
 let _highlighter = null;
 
 const LANG_MAP = { js: 'javascript', ts: 'typescript', java: 'java', python: 'python' };
@@ -24,25 +24,51 @@ async function getHighlighter() {
 // ── Arranque ───────────────────────────────────────────────────────────
 (async () => {
   await loadPartials();
-  document.getElementById('flowchart-wrap').innerHTML = SVG;
-  await renderCode();
+  await loadAlgorithm('par-impar');
   bindEvents();
 })();
+
+// ── Cargar algoritmo ───────────────────────────────────────────────
+async function loadAlgorithm(algoId) {
+  stopAuto();
+  const mod = await import(`./algorithms/${algoId}.js`);
+  currentAlgo = mod;
+
+  document.getElementById('flowchart-wrap').innerHTML = mod.SVG;
+
+  document.getElementById('algo-inputs').innerHTML = mod.CONTROLS_HTML;
+  document.getElementById('algo-inputs').querySelectorAll('input').forEach(inp =>
+    inp.addEventListener('input', reset)
+  );
+
+  document.querySelectorAll('.sidebar-item[data-algo]').forEach(item =>
+    item.classList.toggle('active', item.dataset.algo === algoId)
+  );
+
+  await reset();
+}
 
 // ── Eventos ────────────────────────────────────────────────────────────
 function bindEvents() {
   document.getElementById('btn-next').addEventListener('click', next);
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-auto').addEventListener('click', toggleAuto);
-  document.getElementById('num-input').addEventListener('input', reset);
 
-  document.querySelectorAll('.lang-tab').forEach(tab => {
+  document.querySelectorAll('.lang-tab').forEach(tab =>
     tab.addEventListener('click', () => {
       document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       switchLang(tab.dataset.lang);
-    });
-  });
+    })
+  );
+
+  document.querySelectorAll('.sidebar-item[data-algo]').forEach(item =>
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (item.classList.contains('disabled')) return;
+      loadAlgorithm(item.dataset.algo);
+    })
+  );
 }
 
 // ── Cambio de lenguaje ───────────────────────────────────────────────
@@ -57,7 +83,7 @@ async function switchLang(lang) {
 // ── Renderizar código (Shiki) ────────────────────────────────────────
 async function renderCode(activeLine = null) {
   const hl   = await getHighlighter();
-  const code = CODE_LINES_BY_LANG[currentLang].join('\n');
+  const code = currentAlgo.CODE_LINES_BY_LANG[currentLang].join('\n');
   const html = hl.codeToHtml(code, {
     lang:  LANG_MAP[currentLang],
     theme: 'tokyo-night',
@@ -85,9 +111,9 @@ async function renderCode(activeLine = null) {
 // ── Siguiente paso ─────────────────────────────────────────────────────
 async function next() {
   if (steps.length === 0) {
-    const num = parseInt(document.getElementById('num-input').value);
-    if (isNaN(num)) { log('Ingresa un número válido.', 'err'); return; }
-    steps = buildSteps(num);
+    const result = currentAlgo.buildSteps();
+    if (!result) { log('Ingresa valores válidos.', 'err'); return; }
+    steps = result;
   }
 
   if (stepIndex >= steps.length) return;
@@ -128,7 +154,7 @@ async function reset() {
   steps     = [];
   clearHighlights();
   await renderCode();
-  document.getElementById('step-desc').textContent = 'Ingresa un número y presiona "Siguiente paso".';
+  document.getElementById('step-desc').textContent = 'Configura los valores y presiona “Siguiente paso”.';
   document.getElementById('console-panel').innerHTML = '';
   document.getElementById('btn-next').disabled = false;
 }

@@ -45,6 +45,12 @@ export const SVG = `
   <text x="150" y="487"  text-anchor="middle" font-size="13" fill="#e2e8f0">Fin</text>
 </svg>`;
 
+// ── Controles de entrada ───────────────────────────────────────────
+export const CONTROLS_HTML = `
+  <label class="ctrl-label">Número:</label>
+  <input type="number" id="input-a" value="7" title="Número de entrada">
+`;
+
 // ── Líneas de código por lenguaje ─────────────────────────────────────
 export const CODE_LINES_BY_LANG = {
   js: [
@@ -92,7 +98,9 @@ export const CODE_LINES_BY_LANG = {
 };
 
 // ── Pasos del algoritmo ────────────────────────────────────────────────
-export function buildSteps(num) {
+export function buildSteps() {
+  const num = parseInt(document.getElementById('input-a').value);
+  if (isNaN(num)) return null;
   const esPar = num % 2 === 0;
   return [
     {
