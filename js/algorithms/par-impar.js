@@ -45,16 +45,51 @@ export const SVG = `
   <text x="150" y="487"  text-anchor="middle" font-size="13" fill="#e2e8f0">Fin</text>
 </svg>`;
 
-// ── Líneas de código ───────────────────────────────────────────────────
-export const CODE_LINES = [
-  'const numero = parseInt(prompt("Ingresa un número:"));',
-  '',
-  'if (numero % 2 === 0) {',
-  '  console.log(numero + " es par");',
-  '} else {',
-  '  console.log(numero + " es impar");',
-  '}',
-];
+// ── Líneas de código por lenguaje ─────────────────────────────────────
+export const CODE_LINES_BY_LANG = {
+  js: [
+    'const numero = parseInt(prompt("Ingresa un número:"));',
+    '',
+    'if (numero % 2 === 0) {',
+    '  console.log(numero + " es par");',
+    '} else {',
+    '  console.log(numero + " es impar");',
+    '}',
+  ],
+  ts: [
+    'const numero: number = parseInt(prompt("Ingresa un número:")!);',
+    '',
+    'if (numero % 2 === 0) {',
+    '  console.log(`${numero} es par`);',
+    '} else {',
+    '  console.log(`${numero} es impar`);',
+    '}',
+  ],
+  java: [
+    'import java.util.Scanner;',
+    '',
+    'public class ParImpar {',
+    '  public static void main(String[] args) {',
+    '    Scanner sc = new Scanner(System.in);',
+    '    int numero = sc.nextInt();',
+    '',
+    '    if (numero % 2 == 0) {',
+    '      System.out.println(numero + " es par");',
+    '    } else {',
+    '      System.out.println(numero + " es impar");',
+    '    }',
+    '  }',
+    '}',
+  ],
+  python: [
+    'numero = int(input("Ingresa un número: "))',
+    '',
+    'if numero % 2 == 0:',
+    '  print(f"{numero} es par")',
+    'else:',
+    '  print(f"{numero} es impar")',
+  ],
+};
 
 // ── Pasos del algoritmo ────────────────────────────────────────────────
 export function buildSteps(num) {
@@ -63,28 +98,30 @@ export function buildSteps(num) {
     {
       node: 'n-inicio',
       arrow: null,
-      codeLine: null,
+      codeLines: null,
       desc: '🟢 Inicio del algoritmo.',
       action: null,
     },
     {
       node: 'n-input',
       arrow: 'a-start-input',
-      codeLine: 0,
+      codeLines: { js: 0, ts: 0, java: 5, python: 0 },
       desc: `📥 Leer el número ingresado: <strong>${num}</strong>`,
       action: (log) => log(`> prompt: "${num}"`, 'log'),
     },
     {
       node: 'n-dec',
       arrow: 'a-input-dec',
-      codeLine: 2,
+      codeLines: { js: 2, ts: 2, java: 7, python: 2 },
       desc: `🔀 Evaluar: <strong>${num} % 2 === 0</strong> → <strong>${esPar}</strong>`,
       action: (log) => log(`> ${num} % 2 = ${num % 2}`, 'log'),
     },
     {
       node: esPar ? 'n-par' : 'n-impar',
       arrow: esPar ? 'a-dec-par' : 'a-dec-impar',
-      codeLine: esPar ? 3 : 5,
+      codeLines: esPar
+        ? { js: 3, ts: 3, java: 8, python: 3 }
+        : { js: 5, ts: 5, java: 10, python: 5 },
       desc: esPar
         ? `✅ La condición es verdadera → mostrar "Es par"`
         : `❌ La condición es falsa → mostrar "Es impar"`,
@@ -93,7 +130,7 @@ export function buildSteps(num) {
     {
       node: 'n-fin',
       arrow: esPar ? 'a-res-par-end' : 'a-res-impar-end',
-      codeLine: null,
+      codeLines: null,
       desc: '🏁 Fin del algoritmo.',
       action: null,
     },

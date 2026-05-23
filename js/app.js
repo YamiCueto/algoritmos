@@ -1,16 +1,31 @@
-import { loadPartials }            from './loader.js';
-import { SVG, CODE_LINES, buildSteps } from './algorithms/par-impar.js';
+import { loadPartials }                        from './loader.js';
+import { SVG, CODE_LINES_BY_LANG, buildSteps } from './algorithms/par-impar.js';
+import { createHighlighter }                   from 'https://esm.sh/shiki@1';
 
 // ── Estado ─────────────────────────────────────────────────────────────
-let stepIndex = 0;
-let steps     = [];
-let autoTimer = null;
+let stepIndex    = 0;
+let steps        = [];
+let autoTimer    = null;
+let currentLang  = 'js';
+let _highlighter = null;
+
+const LANG_MAP = { js: 'javascript', ts: 'typescript', java: 'java', python: 'python' };
+
+async function getHighlighter() {
+  if (!_highlighter) {
+    _highlighter = await createHighlighter({
+      themes: ['tokyo-night'],
+      langs:  ['javascript', 'typescript', 'java', 'python'],
+    });
+  }
+  return _highlighter;
+}
 
 // ── Arranque ───────────────────────────────────────────────────────────
 (async () => {
   await loadPartials();
   document.getElementById('flowchart-wrap').innerHTML = SVG;
-  renderCode();
+  await renderCode();
   bindEvents();
 })();
 
@@ -20,28 +35,55 @@ function bindEvents() {
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-auto').addEventListener('click', toggleAuto);
   document.getElementById('num-input').addEventListener('input', reset);
+
+  document.querySelectorAll('.lang-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      switchLang(tab.dataset.lang);
+    });
+  });
 }
 
-// ── Renderizar código ──────────────────────────────────────────────────
-function renderCode(activeLine = null) {
+// ── Cambio de lenguaje ───────────────────────────────────────────────
+async function switchLang(lang) {
+  currentLang = lang;
+  const activeLine = (stepIndex > 0 && steps.length > 0)
+    ? (steps[stepIndex - 1].codeLines?.[lang] ?? null)
+    : null;
+  await renderCode(activeLine);
+}
+
+// ── Renderizar código (Shiki) ────────────────────────────────────────
+async function renderCode(activeLine = null) {
+  const hl   = await getHighlighter();
+  const code = CODE_LINES_BY_LANG[currentLang].join('\n');
+  const html = hl.codeToHtml(code, {
+    lang:  LANG_MAP[currentLang],
+    theme: 'tokyo-night',
+  });
+
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('.line').forEach((line, i) => {
+    const num = document.createElement('span');
+    num.className   = 'line-num';
+    num.textContent = i + 1;
+    line.prepend(num);
+    if (i === activeLine) line.classList.add('active');
+  });
+
   const panel = document.getElementById('code-panel');
-  panel.innerHTML = CODE_LINES.map((line, i) => {
-    const active  = i === activeLine ? ' active' : '';
-    const escaped = line.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return `<div class="code-line${active}">
-      <span class="line-num">${i + 1}</span>
-      <span>${escaped || '&nbsp;'}</span>
-    </div>`;
-  }).join('');
+  panel.innerHTML = tmp.innerHTML;
 
   if (activeLine !== null) {
-    panel.querySelectorAll('.code-line')[activeLine]
+    panel.querySelectorAll('.line')[activeLine]
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 }
 
 // ── Siguiente paso ─────────────────────────────────────────────────────
-function next() {
+async function next() {
   if (steps.length === 0) {
     const num = parseInt(document.getElementById('num-input').value);
     if (isNaN(num)) { log('Ingresa un número válido.', 'err'); return; }
@@ -67,7 +109,7 @@ function next() {
     }
   }
 
-  renderCode(s.codeLine);
+  await renderCode(s.codeLines?.[currentLang] ?? null);
   document.getElementById('step-desc').innerHTML = s.desc;
   if (s.action) s.action(log);
 
@@ -80,12 +122,12 @@ function next() {
 }
 
 // ── Reset ──────────────────────────────────────────────────────────────
-function reset() {
+async function reset() {
   stopAuto();
   stepIndex = 0;
   steps     = [];
   clearHighlights();
-  renderCode();
+  await renderCode();
   document.getElementById('step-desc').textContent = 'Ingresa un número y presiona "Siguiente paso".';
   document.getElementById('console-panel').innerHTML = '';
   document.getElementById('btn-next').disabled = false;
