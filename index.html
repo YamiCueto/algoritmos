@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algoritmos con Diagramas de Flujo</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/flowchart.css">
+  <link rel="stylesheet" href="css/code-panel.css">
+</head>
+<body>
+
+  <div id="app-header"></div>
+
+  <div class="page-body">
+    <div id="app-sidebar"></div>
+
+    <main class="page-content">
+      <!-- Diagrama -->
+      <div class="panel">
+        <h2>Diagrama de flujo</h2>
+        <div id="flowchart-wrap"></div>
+      </div>
+
+      <!-- Código + controles -->
+      <div class="panel right-col">
+        <h2>Código JavaScript</h2>
+
+        <div class="controls">
+          <label class="ctrl-label">Número:</label>
+          <input type="number" id="num-input" value="7" title="Número de entrada">
+          <button class="btn btn-primary" id="btn-next">Siguiente paso ▶</button>
+          <button class="btn btn-success" id="btn-auto">▶▶ Auto</button>
+          <button class="btn btn-neutral" id="btn-reset">↺ Reiniciar</button>
+        </div>
+
+        <div id="step-desc">Ingresa un número y presiona "Siguiente paso".</div>
+
+        <div id="code-panel"></div>
+
+        <div class="panel inner-panel">
+          <h2>Consola</h2>
+          <div id="console-panel"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
